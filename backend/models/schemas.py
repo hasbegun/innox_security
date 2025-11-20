@@ -205,3 +205,136 @@ class CustomProbeGetResponse(BaseModel):
     """Response for getting a specific custom probe"""
     probe: CustomProbe = Field(..., description="Probe metadata")
     code: str = Field(..., description="Probe source code")
+
+
+# ============================================================================
+# Workflow Models
+# ============================================================================
+
+class WorkflowNodeType(str, Enum):
+    """Types of nodes in workflow graph"""
+    PROBE = "probe"
+    GENERATOR = "generator"
+    DETECTOR = "detector"
+    LLM_RESPONSE = "llm_response"
+    VULNERABILITY = "vulnerability"
+
+
+class WorkflowEdgeType(str, Enum):
+    """Types of edges/connections in workflow"""
+    PROMPT = "prompt"
+    RESPONSE = "response"
+    DETECTION = "detection"
+    CHAIN = "chain"
+
+
+class WorkflowNode(BaseModel):
+    """A node in the workflow graph"""
+    node_id: str = Field(..., description="Unique node identifier")
+    node_type: WorkflowNodeType = Field(..., description="Type of node")
+    name: str = Field(..., description="Node name")
+    description: Optional[str] = Field(default=None, description="Node description")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata (timing, tokens, etc.)")
+    timestamp: float = Field(..., description="Unix timestamp when node was created")
+
+
+class WorkflowEdge(BaseModel):
+    """An edge/connection in the workflow graph"""
+    edge_id: str = Field(..., description="Unique edge identifier")
+    source_id: str = Field(..., description="Source node ID")
+    target_id: str = Field(..., description="Target node ID")
+    edge_type: WorkflowEdgeType = Field(..., description="Type of edge")
+    content_preview: str = Field(default="", description="Preview of content (first 100 chars)")
+    full_content: str = Field(default="", description="Full content of interaction")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+
+class VulnerabilityFinding(BaseModel):
+    """Details about a vulnerability found during scan"""
+    vulnerability_type: str = Field(..., description="Type of vulnerability")
+    severity: str = Field(default="medium", description="Severity level (low, medium, high, critical)")
+    probe_name: str = Field(..., description="Probe that found the vulnerability")
+    node_path: List[str] = Field(default_factory=list, description="Path through graph to vulnerability")
+    evidence: str = Field(..., description="Evidence of vulnerability")
+
+
+class WorkflowTrace(BaseModel):
+    """A single trace/execution path in the workflow"""
+    trace_id: str = Field(..., description="Unique trace identifier")
+    scan_id: str = Field(..., description="Parent scan ID")
+    probe_name: str = Field(..., description="Probe name for this trace")
+    nodes: List[WorkflowNode] = Field(default_factory=list, description="Nodes in this trace")
+    edges: List[WorkflowEdge] = Field(default_factory=list, description="Edges in this trace")
+    vulnerability_findings: List[VulnerabilityFinding] = Field(
+        default_factory=list,
+        description="Vulnerabilities found in this trace"
+    )
+    statistics: Dict[str, Any] = Field(default_factory=dict, description="Trace statistics")
+
+
+class WorkflowGraph(BaseModel):
+    """Complete workflow graph for a scan"""
+    scan_id: str = Field(..., description="Scan identifier")
+    nodes: List[WorkflowNode] = Field(default_factory=list, description="All nodes in the graph")
+    edges: List[WorkflowEdge] = Field(default_factory=list, description="All edges in the graph")
+    traces: List[WorkflowTrace] = Field(default_factory=list, description="Individual execution traces")
+    statistics: Dict[str, Any] = Field(default_factory=dict, description="Overall statistics")
+    layout_hints: Dict[str, Any] = Field(default_factory=dict, description="Hints for frontend graph layout")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "scan_id": "scan_12345",
+                "nodes": [
+                    {
+                        "node_id": "probe_1",
+                        "node_type": "probe",
+                        "name": "dan.Dan_11_0",
+                        "description": "DAN jailbreak probe",
+                        "metadata": {"probe_type": "jailbreak"},
+                        "timestamp": 1705660800.0
+                    }
+                ],
+                "edges": [],
+                "traces": [],
+                "statistics": {
+                    "total_interactions": 10,
+                    "vulnerabilities_found": 2
+                },
+                "layout_hints": {}
+            }
+        }
+
+
+class WorkflowTimelineEvent(BaseModel):
+    """A single event in the workflow timeline"""
+    event_id: str = Field(..., description="Unique event identifier")
+    event_type: str = Field(..., description="Type of event")
+    timestamp: float = Field(..., description="Unix timestamp")
+    title: str = Field(..., description="Event title")
+    description: Optional[str] = Field(default=None, description="Event description")
+    node_id: Optional[str] = Field(default=None, description="Associated node ID")
+    prompt: Optional[str] = Field(default=None, description="Prompt content if applicable")
+    response: Optional[str] = Field(default=None, description="Response content if applicable")
+    duration_ms: Optional[float] = Field(default=None, description="Event duration in milliseconds")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+
+class WorkflowExportRequest(BaseModel):
+    """Request to export workflow"""
+    format: str = Field(..., description="Export format (json, mermaid, dot, svg, html)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "format": "json"
+            }
+        }
+
+
+class WorkflowExportResponse(BaseModel):
+    """Response for workflow export"""
+    format: str = Field(..., description="Export format used")
+    data: Optional[str] = Field(default=None, description="Exported data (for text formats)")
+    file_path: Optional[str] = Field(default=None, description="Path to exported file (for binary formats)")
+    download_url: Optional[str] = Field(default=None, description="URL to download the exported file")

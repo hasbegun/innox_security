@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from models.schemas import ScanStatus, ScanConfigRequest
+from services.workflow_analyzer import workflow_analyzer
 
 logger = logging.getLogger(__name__)
 
@@ -368,6 +369,8 @@ class GarakWrapper:
                                     logger.info(f"[{scan_id}] {part}")
                                 # Parse all parts for progress/results
                                 self._parse_progress(scan_id, part)
+                                # Process workflow data
+                                workflow_analyzer.process_garak_output(scan_id, part)
                                 # Only store the final version in output_lines
                                 if part == parts[-1].strip():
                                     scan_info['output_lines'].append(part)
@@ -377,6 +380,8 @@ class GarakWrapper:
                             scan_info['output_lines'].append(decoded)
                             logger.info(f"[{scan_id}] {decoded}")
                             self._parse_progress(scan_id, decoded)
+                            # Process workflow data
+                            workflow_analyzer.process_garak_output(scan_id, decoded)
 
             # Read stdout (which includes stderr)
             await read_stream(process.stdout)

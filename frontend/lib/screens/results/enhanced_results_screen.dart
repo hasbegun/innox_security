@@ -7,6 +7,7 @@ import '../../config/constants.dart';
 import '../../models/scan_status.dart';
 import '../../services/export_service.dart';
 import '../../providers/api_provider.dart';
+import '../workflow/workflow_viewer_screen.dart';
 import 'detailed_report_screen.dart';
 
 /// Enhanced results screen with charts and detailed breakdown
@@ -63,41 +64,59 @@ class _EnhancedResultsScreenState extends ConsumerState<EnhancedResultsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.scanResults),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _shareResults,
-            tooltip: AppLocalizations.of(context)!.shareResults,
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.download),
-            tooltip: AppLocalizations.of(context)!.export,
-            onSelected: _handleExport,
-            itemBuilder: (menuContext) => [
-              PopupMenuItem(
-                value: 'json',
-                child: Text(AppLocalizations.of(menuContext)!.exportAsJson),
-              ),
-              PopupMenuItem(
-                value: 'html',
-                child: Text(AppLocalizations.of(menuContext)!.exportAsHtml),
-              ),
-              PopupMenuItem(
-                value: 'pdf',
-                child: Text(AppLocalizations.of(menuContext)!.exportAsPdf),
-              ),
-            ],
-          ),
-        ],
+    return DefaultTabController(
+      length: 3, // Summary, Charts, Workflow
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.scanResults),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: _shareResults,
+              tooltip: AppLocalizations.of(context)!.shareResults,
+            ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.download),
+              tooltip: AppLocalizations.of(context)!.export,
+              onSelected: _handleExport,
+              itemBuilder: (menuContext) => [
+                PopupMenuItem(
+                  value: 'json',
+                  child: Text(AppLocalizations.of(menuContext)!.exportAsJson),
+                ),
+                PopupMenuItem(
+                  value: 'html',
+                  child: Text(AppLocalizations.of(menuContext)!.exportAsHtml),
+                ),
+                PopupMenuItem(
+                  value: 'pdf',
+                  child: Text(AppLocalizations.of(menuContext)!.exportAsPdf),
+                ),
+              ],
+            ),
+          ],
+          bottom: _isLoading || _error != null
+              ? null
+              : const TabBar(
+                  tabs: [
+                    Tab(text: 'Summary', icon: Icon(Icons.dashboard)),
+                    Tab(text: 'Charts', icon: Icon(Icons.bar_chart)),
+                    Tab(text: 'Workflow', icon: Icon(Icons.account_tree)),
+                  ],
+                ),
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildErrorView(theme)
+                : TabBarView(
+                    children: [
+                      _buildSummaryTab(theme),
+                      _buildChartsTab(theme),
+                      WorkflowViewerScreen(scanId: widget.scanId),
+                    ],
+                  ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _buildErrorView(theme)
-              : _buildResultsView(theme),
     );
   }
 
@@ -125,7 +144,7 @@ class _EnhancedResultsScreenState extends ConsumerState<EnhancedResultsScreen> {
     );
   }
 
-  Widget _buildResultsView(ThemeData theme) {
+  Widget _buildSummaryTab(ThemeData theme) {
     final summary = _results?['summary'] ?? {};
     final results = _results?['results'] ?? {};
     final passed = results['passed'] ?? 0;
@@ -141,12 +160,6 @@ class _EnhancedResultsScreenState extends ConsumerState<EnhancedResultsScreen> {
           _buildSummaryCard(theme, summary, passed, failed, total),
           const SizedBox(height: AppConstants.defaultPadding),
 
-          // Charts Section
-          if (total > 0) ...[
-            _buildChartsCard(theme, passed, failed, total),
-            const SizedBox(height: AppConstants.defaultPadding),
-          ],
-
           // Detailed Metrics
           _buildMetricsCard(theme, results),
           const SizedBox(height: AppConstants.defaultPadding),
@@ -157,6 +170,45 @@ class _EnhancedResultsScreenState extends ConsumerState<EnhancedResultsScreen> {
 
           // Action Buttons
           _buildActionButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartsTab(ThemeData theme) {
+    final results = _results?['results'] ?? {};
+    final passed = results['passed'] ?? 0;
+    final failed = results['failed'] ?? 0;
+    final total = passed + failed;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (total > 0) ...[
+            _buildChartsCard(theme, passed, failed, total),
+          ] else ...[
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bar_chart, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No chart data available',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
