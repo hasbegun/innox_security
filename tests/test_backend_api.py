@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Test Backend API Connectivity
-Quick script to verify the innox_security backend is working
+Quick script to verify the aegis backend is working
 """
 
 import requests
@@ -97,7 +97,7 @@ def test_scan_request():
 
 def main():
     print("=" * 60)
-    print("  INNOX SECURITY BACKEND API TEST")
+    print("  AEGIS SECURITY BACKEND API TEST")
     print("=" * 60)
 
     results = {

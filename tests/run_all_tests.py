@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Master Test Runner
-Executes all LLM security test sections using innox_security backend
+Executes all LLM security test sections using aegis backend
 """
 
 import sys
@@ -23,10 +23,10 @@ RESET = '\033[0m'
 def print_banner():
     """Print test suite banner"""
     print("\n" + "=" * 70)
-    print(f"{BOLD}  INNOX SECURITY - LLM VULNERABILITY TEST SUITE{RESET}")
+    print(f"{BOLD}  AEGIS SECURITY - LLM VULNERABILITY TEST SUITE{RESET}")
     print("=" * 70)
     print(f"\nTarget:    Open WebUI (localhost:3030)")
-    print(f"Backend:   Innox Security API (localhost:8888)")
+    print(f"Backend:   Aegis API (localhost:8888)")
     print(f"Framework: Garak LLM Scanner")
     print(f"Date:      {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("\n" + "=" * 70)

@@ -5,7 +5,7 @@ class AppConstants {
   static const String wsBaseUrl = 'ws://localhost:8888/api/v1';
 
   // App Information
-  static const String appName = 'Innox Security';
+  static const String appName = 'Aegis';
   static const String appVersion = '1.0.0';
   static const String appDescription = 'LLM Vulnerability Scanner';
 

@@ -1,5 +1,5 @@
 """
-Innox Security Test Suite
+Aegis Test Suite
 Modular LLM security testing using the Garak backend API
 """
 

@@ -18,7 +18,7 @@ except ImportError:
     pass  # python-dotenv not installed, use system env vars
 
 # Backend API Configuration
-API_BASE_URL = os.getenv("INNOX_API_URL", "http://localhost:8888")
+API_BASE_URL = os.getenv("AEGIS_API_URL", "http://localhost:8888")
 API_TIMEOUT = int(os.getenv("API_TIMEOUT", "300"))
 
 # Target LLM Configuration (Open WebUI with Ollama)

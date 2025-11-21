@@ -2,7 +2,7 @@
 
 ## ✅ Backend Integration Fixed
 
-The test suite is now properly configured to work with the innox_security backend.
+The test suite is now properly configured to work with the aegis backend.
 
 ### What Was Fixed
 

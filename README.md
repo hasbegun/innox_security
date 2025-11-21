@@ -1,11 +1,11 @@
-# Innox Security
+# Aegis
 
-A modern desktop GUI for [Garak](https://github.com/leondz/garak), NVIDIA's LLM vulnerability scanner. Garak Studio provides an intuitive interface to scan language models for security vulnerabilities including jailbreaks, prompt injection, toxicity, and more.
+A modern cross platform GUI for [Garak](https://github.com/leondz/garak), NVIDIA's LLM vulnerability scanner. Aegis provides an intuitive interface to scan language models for security vulnerabilities including jailbreaks, prompt injection, toxicity, and more.
 
 ## Project Structure
 
 ```
-innxo_security/
+aegis/
 ├── backend/          # FastAPI backend service
 │   ├── api/          # API routes
 │   ├── models/       # Data models

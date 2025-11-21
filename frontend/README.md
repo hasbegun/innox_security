@@ -1,10 +1,10 @@
-# Innox Security
+# Aegis
 
 A Flutter GUI application for the [garak](https://github.com/NVIDIA/garak) LLM vulnerability scanner.
 
 ## Overview
 
-Innox Security provides a modern, cross-platform graphical interface for running garak vulnerability scans against large language models. Test your LLMs for:
+Aegis provides a modern, cross-platform graphical interface for running garak vulnerability scans against large language models. Test your LLMs for:
 
 - 🛡️ Jailbreaks (DAN attacks, etc.)
 - 💉 Prompt Injection
@@ -65,7 +65,7 @@ Comprehensive results with visualizations and metrics:
 ### 1. Install Dependencies
 
 ```bash
-cd innox_security/frontend
+cd aegis/frontend
 flutter pub get
 ```
 

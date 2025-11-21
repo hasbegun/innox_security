@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:innox_security/l10n/app_localizations.dart';
+import 'package:aegis/l10n/app_localizations.dart';
 import '../../providers/api_provider.dart';
 
 class DetailedReportScreen extends ConsumerStatefulWidget {

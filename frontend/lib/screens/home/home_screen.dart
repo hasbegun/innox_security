@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:innox_security/l10n/app_localizations.dart';
+import 'package:aegis/l10n/app_localizations.dart';
 import '../../config/constants.dart';
 import '../configuration/model_selection_screen.dart';
 import '../browse/browse_probes_screen.dart';
