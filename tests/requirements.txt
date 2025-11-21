@@ -1,0 +1,10 @@
+# Innox Security Test Suite Dependencies
+
+# HTTP client for API communication
+requests>=2.31.0
+
+# Optional: Better HTTP debugging
+# httpx>=0.25.0
+
+# Note: The innox_security backend must be running separately
+# See: /Users/innox/projects/garak/innox_security/backend/README.md
