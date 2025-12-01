@@ -503,6 +503,9 @@ class _EnhancedResultsScreenState extends ConsumerState<EnhancedResultsScreen> {
   }
 
   Widget _buildActionButtons() {
+    // Check if detailed report is available
+    final bool hasDetailedReport = _hasDetailedReport();
+
     return Row(
       children: [
         Expanded(
@@ -515,13 +518,36 @@ class _EnhancedResultsScreenState extends ConsumerState<EnhancedResultsScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: FilledButton.icon(
-            onPressed: _viewDetailedReport,
+            onPressed: hasDetailedReport ? _viewDetailedReport : null,
             icon: const Icon(Icons.article),
-            label: Text(AppLocalizations.of(context)!.detailedReport),
+            label: Text(
+              hasDetailedReport
+                ? AppLocalizations.of(context)!.detailedReport
+                : 'No Detailed Report'
+            ),
           ),
         ),
       ],
     );
+  }
+
+  bool _hasDetailedReport() {
+    if (_results == null) return false;
+
+    // Check if any probe has enhanced details
+    final digest = _results!['digest'] as Map<String, dynamic>?;
+    if (digest == null) return false;
+
+    // Check if there's at least one probe with enhanced details
+    for (final entry in digest.entries) {
+      final probeData = entry.value as Map<String, dynamic>?;
+      if (probeData != null &&
+          probeData['has_enhanced_details'] == true) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   IconData _getStatusIcon(ScanStatus status) {
