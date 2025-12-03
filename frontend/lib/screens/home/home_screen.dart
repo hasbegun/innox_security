@@ -366,7 +366,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const Text(AppConstants.appDescription),
         const SizedBox(height: 16),
         const Text(
-          'A Flutter GUI for the Garak LLM vulnerability scanner. '
+          'A GUI for the LLM vulnerability scanner. '
           'Test your language models for security vulnerabilities, jailbreaks, '
           'prompt injection, and other weaknesses.',
         ),
