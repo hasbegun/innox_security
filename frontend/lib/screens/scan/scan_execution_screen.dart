@@ -4,6 +4,7 @@ import 'package:aegis/l10n/app_localizations.dart';
 import '../../config/constants.dart';
 import '../../providers/scan_provider.dart';
 import '../../providers/scan_config_provider.dart';
+import '../../providers/background_scans_provider.dart';
 import '../../models/scan_status.dart';
 import '../../models/scan_config.dart';
 import '../results/enhanced_results_screen.dart';
@@ -73,6 +74,165 @@ class _ScanExecutionScreenState extends ConsumerState<ScanExecutionScreen> {
     }
   }
 
+  Future<void> _moveToBackground() async {
+    // Move current scan to background
+    ref.read(backgroundScanActionsProvider).moveCurrentScanToBackground();
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+  Future<String?> _showBackgroundDialog() async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline, size: 28),
+            const SizedBox(width: 12),
+            Text(AppLocalizations.of(dialogContext)!.scanInProgress),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your scan is still running. What would you like to do?',
+              style: Theme.of(dialogContext).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            _buildDialogOption(
+              context: dialogContext,
+              icon: Icons.visibility,
+              title: 'Stay on Screen',
+              subtitle: 'Continue watching scan progress',
+            ),
+            const SizedBox(height: 8),
+            _buildDialogOption(
+              context: dialogContext,
+              icon: Icons.arrow_circle_down,
+              title: 'Run in Background',
+              subtitle: 'Navigate away, scan continues running',
+              recommended: true,
+            ),
+            const SizedBox(height: 8),
+            _buildDialogOption(
+              context: dialogContext,
+              icon: Icons.cancel,
+              title: 'Cancel Scan',
+              subtitle: 'Stop the scan immediately',
+              isDestructive: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, 'stay'),
+            child: const Text('Stay'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, 'background'),
+            icon: const Icon(Icons.arrow_circle_down),
+            label: const Text('Background'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, 'cancel'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            child: const Text('Cancel Scan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    bool recommended = false,
+    bool isDestructive = false,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: recommended
+            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : isDestructive
+                ? theme.colorScheme.errorContainer.withValues(alpha: 0.2)
+                : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        border: recommended
+            ? Border.all(color: theme.colorScheme.primary, width: 2)
+            : null,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: recommended
+                ? theme.colorScheme.primary
+                : isDestructive
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDestructive ? theme.colorScheme.error : null,
+                      ),
+                    ),
+                    if (recommended) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'RECOMMENDED',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _viewResults() {
     final scanState = ref.read(activeScanProvider);
     if (scanState.scanId != null) {
@@ -98,37 +258,26 @@ class _ScanExecutionScreenState extends ConsumerState<ScanExecutionScreen> {
       canPop: !(scanState.status?.status.isActive ?? false),
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) {
-          // Always disconnect WebSocket when leaving
+          // Scan is not active, safe to leave
+          // Disconnect WebSocket if still connected
           ref.read(activeScanProvider.notifier).disconnectWebSocket();
           return;
         }
 
-        // If we reach here, the pop was blocked, show confirmation dialog
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(AppLocalizations.of(dialogContext)!.scanInProgress),
-            content: Text(AppLocalizations.of(dialogContext)!.scanInProgressContent),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(AppLocalizations.of(dialogContext)!.stay),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(AppLocalizations.of(dialogContext)!.cancelScan),
-              ),
-            ],
-          ),
-        );
+        // If we reach here, the pop was blocked (scan is active)
+        // Show 3-option dialog
+        final choice = await _showBackgroundDialog();
 
-        if (confirmed == true && mounted) {
+        if (choice == 'background' && mounted) {
+          await _moveToBackground();
+        } else if (choice == 'cancel' && mounted) {
           ref.read(activeScanProvider.notifier).disconnectWebSocket();
           await ref.read(activeScanProvider.notifier).cancelScan();
           if (mounted) {
             Navigator.pop(context);
           }
         }
+        // If 'stay', do nothing (stay on screen)
       },
       child: Scaffold(
         appBar: AppBar(

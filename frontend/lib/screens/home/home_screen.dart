@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aegis/l10n/app_localizations.dart';
 import '../../config/constants.dart';
+import '../../widgets/background_scans_indicator.dart';
+import '../../providers/background_scans_provider.dart';
 import '../configuration/model_selection_screen.dart';
 import '../browse/browse_probes_screen.dart';
 import '../history/scan_history_screen.dart';
 import '../probes/write_probe_screen.dart';
 import '../probes/manage_probes_screen.dart';
 import '../settings/settings_screen.dart';
+import '../background_tasks/background_tasks_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -42,6 +45,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          // Background Tasks icon with badge
+          Consumer(
+            builder: (context, ref, child) {
+              final activeCount = ref.watch(activeBackgroundScanCountProvider);
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.alt_route),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BackgroundTasksScreen(),
+                        ),
+                      );
+                    },
+                    tooltip: 'Background Tasks',
+                  ),
+                  if (activeCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.error,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          activeCount.toString(),
+                          style: TextStyle(
+                            color: colorScheme.onError,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -63,28 +114,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Section
-              _buildWelcomeCard(context),
-              const SizedBox(height: AppConstants.largePadding),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppConstants.defaultPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome Section
+                  _buildWelcomeCard(context),
+                  const SizedBox(height: AppConstants.largePadding),
 
-              // Actions
-              Text(
-                l10n.actions,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                  // Actions
+                  Text(
+                    l10n.actions,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.defaultPadding),
+                  _buildQuickActions(context),
+                  // Add extra padding at bottom for floating indicator
+                  const SizedBox(height: 80),
+                ],
               ),
-              const SizedBox(height: AppConstants.defaultPadding),
-              _buildQuickActions(context),
-            ],
+            ),
           ),
-        ),
+          // Floating background scans indicator
+          const BackgroundScansIndicator(),
+        ],
       ),
       // floatingActionButton: FloatingActionButton.extended(
       //   onPressed: () {

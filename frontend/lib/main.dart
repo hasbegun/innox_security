@@ -5,14 +5,34 @@ import 'package:aegis/l10n/app_localizations.dart';
 import 'screens/home/home_screen.dart';
 import 'config/constants.dart';
 import 'providers/theme_provider.dart';
+import 'providers/background_scans_provider.dart';
 
 // Locale provider for language selection
 final localeProvider = StateProvider<Locale?>((ref) => null);
 
-void main() {
+// Global provider container for accessing providers in main()
+final globalContainer = ProviderContainer();
+
+void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize persistence service
+  final persistenceService = globalContainer.read(scanPersistenceServiceProvider);
+  await persistenceService.initialize();
+
+  // Initialize notification service
+  final notificationService = globalContainer.read(scanNotificationServiceProvider);
+  await notificationService.initialize();
+
+  // Restore background scans from storage
+  final backgroundScanService = globalContainer.read(backgroundScanServiceProvider);
+  await backgroundScanService.restoreScans();
+
   runApp(
-    const ProviderScope(
-      child: InnoxSecurityApp(),
+    UncontrolledProviderScope(
+      container: globalContainer,
+      child: const InnoxSecurityApp(),
     ),
   );
 }
