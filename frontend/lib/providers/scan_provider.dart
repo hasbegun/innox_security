@@ -136,7 +136,11 @@ class ActiveScanNotifier extends StateNotifier<ActiveScanState> {
   void disconnectWebSocket() {
     _wsSubscription?.cancel();
     _wsSubscription = null;
-    _wsService.disconnect();
+
+    // Disconnect specific scan if we have a scan ID
+    if (state.scanId != null) {
+      _wsService.disconnectScan(state.scanId!);
+    }
   }
 
   /// Reset scan state

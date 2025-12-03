@@ -14,7 +14,10 @@ class BackgroundScansIndicator extends ConsumerWidget {
 
     return scansAsync.when(
       data: (scans) {
-        if (scans.isEmpty) return const SizedBox.shrink();
+        // Only show ACTIVE scans in the floating indicator
+        final activeScans = scans.where((scan) => scan.isActive).toList();
+
+        if (activeScans.isEmpty) return const SizedBox.shrink();
 
         return Positioned(
           bottom: 16,
@@ -24,7 +27,7 @@ class BackgroundScansIndicator extends ConsumerWidget {
             elevation: 8,
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
-              onTap: () => _showAllScans(context, ref, scans),
+              onTap: () => _showAllScans(context, ref, activeScans),
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -56,16 +59,16 @@ class BackgroundScansIndicator extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            scans.length == 1
+                            activeScans.length == 1
                                 ? '1 scan running'
-                                : '${scans.length} scans running',
+                                : '${activeScans.length} scans running',
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (scans.length == 1 && scans.first.progress != null)
+                          if (activeScans.length == 1 && activeScans.first.progress != null)
                             Text(
-                              '${(scans.first.progress! * 100).toStringAsFixed(0)}% complete',
+                              '${(activeScans.first.progress! * 100).toStringAsFixed(0)}% complete',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                         ],

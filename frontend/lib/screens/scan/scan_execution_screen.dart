@@ -5,9 +5,11 @@ import '../../config/constants.dart';
 import '../../providers/scan_provider.dart';
 import '../../providers/scan_config_provider.dart';
 import '../../providers/background_scans_provider.dart';
+import '../../services/background_scan_service.dart';
 import '../../models/scan_status.dart';
 import '../../models/scan_config.dart';
 import '../results/enhanced_results_screen.dart';
+import '../background_tasks/background_tasks_screen.dart';
 
 class ScanExecutionScreen extends ConsumerStatefulWidget {
   const ScanExecutionScreen({super.key});
@@ -383,6 +385,9 @@ class _ScanExecutionScreenState extends ConsumerState<ScanExecutionScreen> {
                             ),
                           ),
                         ],
+
+                        // Other Running Scans Section
+                        _buildOtherRunningScans(theme, scanState.scanId),
                       ],
                     ),
                   ),
@@ -764,6 +769,172 @@ class _ScanExecutionScreenState extends ConsumerState<ScanExecutionScreen> {
         return Colors.red;
       case ScanStatus.cancelled:
         return Colors.grey;
+    }
+  }
+
+  Widget _buildOtherRunningScans(ThemeData theme, String? currentScanId) {
+    final backgroundScansAsync = ref.watch(backgroundScansProvider);
+
+    return backgroundScansAsync.when(
+      data: (scans) {
+        // Filter out the current scan and only show running scans
+        final otherScans = scans
+            .where((scan) =>
+                scan.scanId != currentScanId &&
+                scan.isActive)
+            .toList();
+
+        if (otherScans.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(
+                  Icons.alt_route,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Other Running Scans (${otherScans.length})',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'These scans are running in the background',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...otherScans.map((scan) => _buildCompactScanCard(theme, scan)),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildCompactScanCard(ThemeData theme, BackgroundScan scan) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          // Navigate to background tasks screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BackgroundTasksScreen(),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.sync,
+                      color: theme.colorScheme.primary,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          scan.displayName,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${scan.config.targetType} • ${scan.config.targetName}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: scan.progress ?? 0.0,
+                  minHeight: 6,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    scan.progress != null
+                        ? '${(scan.progress! * 100).toStringAsFixed(1)}% complete'
+                        : 'Starting...',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  Text(
+                    _formatElapsedTime(scan.startTime),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatElapsedTime(DateTime startTime) {
+    final elapsed = DateTime.now().difference(startTime);
+    if (elapsed.inHours > 0) {
+      return '${elapsed.inHours}h ${elapsed.inMinutes % 60}m';
+    } else if (elapsed.inMinutes > 0) {
+      return '${elapsed.inMinutes}m';
+    } else {
+      return '${elapsed.inSeconds}s';
     }
   }
 }
